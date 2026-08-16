@@ -38,17 +38,19 @@ export default async function handler(req, res) {
   const serverKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!serverKey || !process.env.SUPABASE_URL) return res.status(503).json({ error: "server_not_configured" });
   const supabase = createClient(process.env.SUPABASE_URL, serverKey, { auth: { persistSession: false } });
-  const { data: product, error: productError } = await supabase.from("products").select("amount_inr,active").eq("id", productId).maybeSingle();
+  const { data: product, error: productError } = await supabase.from("products").select("amount_inr,active,delivery_url").eq("id", productId).maybeSingle();
   if (productError || !product || !product.active || Number(product.amount_inr) !== amountInr) {
     return res.status(422).json({ error: "unknown_or_mismatched_product" });
   }
+  const status = product.delivery_url ? "paid" : "paid_delivery_pending";
   const { error } = await supabase.from("orders").upsert({
     provider: "razorpay",
     provider_payment_id: providerPaymentId,
     product_id: productId,
     buyer_email: String(buyerEmail).trim().toLowerCase(),
     amount_inr: amountInr,
-    status: "paid"
+    status,
+    delivery_url: product.delivery_url || null
   }, { onConflict: "provider_payment_id" });
   if (error) return res.status(500).json({ error: "order_record_failed" });
   return res.status(200).json({ ok: true });

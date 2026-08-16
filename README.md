@@ -1,13 +1,14 @@
 # The Public Ledger storefront
 
 This is a static, Vercel-ready catalogue. It contains public landing pages for
-all 13 QC-approved pilot products, but never exposes the private PDFs or Drive
+all 13 QC-approved launch products, but never exposes the private PDFs or Drive
 links. Razorpay payment-link URLs are kept in `catalog.js`; paste only verified
 checkout URLs into `paymentLinks` before going live.
 
 The payment webhook remains the delivery authority: after a verified payment,
-the server sends the buyer the matching private Drive file. The website should
-not embed or reveal those Drive URLs.
+it records the order and the matching private Drive delivery URL. The website
+does not embed or reveal Drive URLs until the buyer is authenticated. Apply
+`supabase/schema.sql` before enabling products in the payment provider.
 
 ## Local preview
 
@@ -23,8 +24,10 @@ Open `http://localhost:4173`. Product routes include:
 - `/bundle/india-s-farms`
 
 Before launch, verify each Razorpay link, replace the empty values in
-`catalog.js`, and test one payment through the webhook and Drive-delivery
-path.
+`catalog.js`, populate the matching `delivery_url` in Supabase, set that
+product `active = true`, and test one payment through the webhook and
+buyer-account delivery path. A product must not be marked active while either
+its payment link or delivery URL is missing.
 
 ## Vercel preview
 
